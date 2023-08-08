@@ -8,3 +8,8 @@ export enum ROUTES {
   WithDrilldown = 'page-with-drilldown',
   HelloWorld = 'hello-world',
 }
+
+export const DATASOURCE_REF = {
+  uid: 'loki',
+  type: 'loki',
+};
