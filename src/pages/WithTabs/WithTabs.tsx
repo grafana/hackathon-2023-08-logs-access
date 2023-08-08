@@ -5,11 +5,11 @@ import { prefixRoute } from '../../utils/utils.routing';
 import { getBasicScene } from '../Home/scenes';
 
 const getTab1Scene = () => {
-  return getBasicScene(false, '__server_names');
+  return getBasicScene();
 };
 
 const getTab2Scene = () => {
-  return getBasicScene(false, '__house_locations');
+  return getBasicScene();
 };
 
 const getScene = () =>
