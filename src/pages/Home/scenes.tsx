@@ -22,30 +22,13 @@ export function getBasicScene() {
   const timeRange = new SceneTimeRange({
     from: 'now-6h',
     to: 'now',
-  });
-
-  const queryRunner = new SceneQueryRunner({
-    datasource: getDs(),
-    queries: [
-      {
-        refId: 'A',
-        datasource: getDs(),
-        expr: 'count_over_time({source="/var/log/access.log"}[$__interval])',
-      },
-    ],
-  });
+  });  
 
   return new EmbeddedScene({
     $timeRange: timeRange,
-    $data: queryRunner,
     body: new SceneFlexLayout({
       children: [
-        new SceneFlexItem({
-          minHeight: 300,
-          body: PanelBuilders.timeseries()
-            .setTitle('Visits')
-            .build(),
-        }),
+        getTotalRequestsScene(),
       ],
     }),
     controls: [
@@ -57,5 +40,28 @@ export function getBasicScene() {
         isOnCanvas: true,
       }),
     ],
+  });
+}
+
+function getTotalRequestsScene() {
+  const queryRunner = new SceneQueryRunner({
+    datasource: getDs(),
+    queries: [
+      {
+        refId: 'A',
+        datasource: getDs(),
+        expr: 'sum(count_over_time({source="/var/log/access.log"}[$__interval]))',
+      },
+    ],
+  });
+
+  const panel = PanelBuilders.timeseries()
+    .setTitle('Visits')
+    .setData(queryRunner)
+    .build();
+  
+  return new SceneFlexItem({
+    minHeight: 300,
+    body: panel,
   });
 }
