@@ -31,7 +31,8 @@ export function getBasicScene() {
         getTotalRequestsScene(),
         getRealtimeVisitorsScene(),
         getErrorRequestsScene(),
-        getBytesSentScene()
+        getBytesSentScene(),
+        getLogsScene()
       ],
     }),
     controls: [
@@ -147,6 +148,33 @@ function getBytesSentScene() {
     width: 16,
     x: 8,
     y: 8,
+    body: panel,
+  });
+}
+
+function getLogsScene() {
+  const queryRunner = new SceneQueryRunner({
+    datasource: getDs(),
+    queries: [
+      {
+        refId: 'A',
+        datasource: getDs(),
+        expr: '{source="/var/log/access.log"}',
+        limit: 5000,
+      },
+    ],
+  });
+
+  const panel = PanelBuilders.logs()
+    .setTitle('Logs')
+    .setData(queryRunner)
+    .build();
+  
+  return new SceneGridItem({
+    height: 16,
+    width: 24,
+    x: 0,
+    y: 16,
     body: panel,
   });
 }
