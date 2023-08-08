@@ -3,8 +3,8 @@ import {
   EmbeddedScene,
   PanelBuilders,
   SceneControlsSpacer,
-  SceneFlexItem,
-  SceneFlexLayout,
+  SceneGridItem,
+  SceneGridLayout,
   SceneQueryRunner,
   SceneRefreshPicker,
   SceneTimePicker,
@@ -26,7 +26,7 @@ export function getBasicScene() {
 
   return new EmbeddedScene({
     $timeRange: timeRange,
-    body: new SceneFlexLayout({
+    body: new SceneGridLayout({
       children: [
         getTotalRequestsScene(),
         getRealtimeVisitorsScene(),
@@ -63,8 +63,11 @@ function getTotalRequestsScene() {
     .setData(queryRunner)
     .build();
   
-  return new SceneFlexItem({
-    minHeight: 300,
+  return new SceneGridItem({
+    x: 0,
+    y: 0,
+    height: 8,
+    width: 12,
     body: panel,
   });
 }
@@ -87,8 +90,11 @@ function getRealtimeVisitorsScene() {
     .setData(queryRunner)
     .build();
   
-  return new SceneFlexItem({
-    minHeight: 300,
+  return new SceneGridItem({
+    height: 8,
+    width: 8,
+    x: 0,
+    y: 8,
     body: panel,
   });
 }
@@ -110,8 +116,11 @@ function getErrorRequestsScene() {
     .setData(queryRunner)
     .build();
   
-  return new SceneFlexItem({
-    minHeight: 300,
+  return new SceneGridItem({
+    height: 8,
+    width: 12,
+    x: 12,
+    y: 0,
     body: panel,
   });
 }
@@ -133,8 +142,11 @@ function getBytesSentScene() {
     .setData(queryRunner)
     .build();
   
-  return new SceneFlexItem({
-    minHeight: 300,
+  return new SceneGridItem({
+    height: 8,
+    width: 16,
+    x: 8,
+    y: 8,
     body: panel,
   });
 }
