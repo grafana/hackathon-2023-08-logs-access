@@ -29,6 +29,9 @@ export function getBasicScene() {
     body: new SceneFlexLayout({
       children: [
         getTotalRequestsScene(),
+        getRealtimeVisitorsScene(),
+        getErrorRequestsScene(),
+        getBytesSentScene()
       ],
     }),
     controls: [
@@ -56,7 +59,77 @@ function getTotalRequestsScene() {
   });
 
   const panel = PanelBuilders.timeseries()
-    .setTitle('Visits')
+    .setTitle('Total requests')
+    .setData(queryRunner)
+    .build();
+  
+  return new SceneFlexItem({
+    minHeight: 300,
+    body: panel,
+  });
+}
+
+function getRealtimeVisitorsScene() {
+  const queryRunner = new SceneQueryRunner({
+    datasource: getDs(),
+    queries: [
+      {
+        refId: 'A',
+        datasource: getDs(),
+        expr: 'count(sum by (remote_addr) (count_over_time({source="/var/log/access.log"} [$__interval])))',
+      },
+    ],
+    $timeRange: new SceneTimeRange({ from: 'now-500m', to: 'now' }),
+  });
+
+  const panel = PanelBuilders.timeseries()
+    .setTitle('Real time visitors')
+    .setData(queryRunner)
+    .build();
+  
+  return new SceneFlexItem({
+    minHeight: 300,
+    body: panel,
+  });
+}
+
+function getErrorRequestsScene() {
+  const queryRunner = new SceneQueryRunner({
+    datasource: getDs(),
+    queries: [
+      {
+        refId: 'A',
+        datasource: getDs(),
+        expr: 'sum by (status) (count_over_time({source="/var/log/access.log", status!="200"} [$__interval]))',
+      },
+    ],
+  });
+
+  const panel = PanelBuilders.timeseries()
+    .setTitle('Requests with errors')
+    .setData(queryRunner)
+    .build();
+  
+  return new SceneFlexItem({
+    minHeight: 300,
+    body: panel,
+  });
+}
+
+function getBytesSentScene() {
+  const queryRunner = new SceneQueryRunner({
+    datasource: getDs(),
+    queries: [
+      {
+        refId: 'A',
+        datasource: getDs(),
+        expr: 'sum by(source) (sum_over_time({source="/var/log/access.log"} | unwrap bytes_sent [$__interval]))',
+      },
+    ],
+  });
+
+  const panel = PanelBuilders.timeseries()
+    .setTitle('Bytes sent')
     .setData(queryRunner)
     .build();
   
