@@ -1,5 +1,6 @@
 import { config } from '@grafana/runtime';
 import {
+  DataSourceVariable,
   EmbeddedScene,
   PanelBuilders,
   QueryVariable,
@@ -15,6 +16,7 @@ import {
 } from '@grafana/scenes';
 
 function getDs() {
+  console.log(config.datasources);
   const entry = Object.entries(config.datasources).find(([_, ds]) => ds.type === 'loki');
   const ds = entry ? entry[1] : null;
   return ds ? { type: ds.type, uid: ds.uid } : undefined;
@@ -26,18 +28,25 @@ export function getBasicScene() {
     to: 'now',
   });
 
-  const handlers = new QueryVariable({
-    name: 'Log stream',
-    datasource: getDs(),
-    query: {
-      query: 'label_names()',
+  const dsHandler = new DataSourceVariable({
+    label: 'Data source',
+    name: 'ds',
+    pluginId: 'loki'
+  });
+  const streamHandler = new QueryVariable({
+    label: 'Log stream',
+    name: 'stream',
+    datasource: {
+      type: 'loki',
+      uid: '$ds'
     },
+    query: 'label_names()',
   });
 
   return new EmbeddedScene({
     $timeRange: timeRange,
     $variables: new SceneVariableSet({
-      variables: [handlers],
+      variables: [dsHandler, streamHandler],
     }),
     body: new SceneGridLayout({
       children: [
