@@ -2,6 +2,7 @@ import { config } from '@grafana/runtime';
 import {
   EmbeddedScene,
   PanelBuilders,
+  QueryVariable,
   SceneControlsSpacer,
   SceneGridItem,
   SceneGridLayout,
@@ -9,6 +10,7 @@ import {
   SceneRefreshPicker,
   SceneTimePicker,
   SceneTimeRange,
+  SceneVariableSet,
   VariableValueSelectors,
 } from '@grafana/scenes';
 
@@ -22,10 +24,21 @@ export function getBasicScene() {
   const timeRange = new SceneTimeRange({
     from: 'now-6h',
     to: 'now',
-  });  
+  });
+
+  const handlers = new QueryVariable({
+    name: 'Log stream',
+    datasource: getDs(),
+    query: {
+      query: 'label_names()',
+    },
+  });
 
   return new EmbeddedScene({
     $timeRange: timeRange,
+    $variables: new SceneVariableSet({
+      variables: [handlers],
+    }),
     body: new SceneGridLayout({
       children: [
         getTotalRequestsScene(),
@@ -83,10 +96,10 @@ function getRealtimeVisitorsScene() {
         expr: 'count(sum by (remote_addr) (count_over_time({source="/var/log/access.log"} [$__interval])))',
       },
     ],
-    $timeRange: new SceneTimeRange({ from: 'now-500m', to: 'now' }),
+    $timeRange: new SceneTimeRange({ from: 'now-5m', to: 'now' }),
   });
 
-  const panel = PanelBuilders.timeseries()
+  const panel = PanelBuilders.stat()
     .setTitle('Real time visitors')
     .setData(queryRunner)
     .build();
