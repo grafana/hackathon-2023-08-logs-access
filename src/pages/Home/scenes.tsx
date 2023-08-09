@@ -34,19 +34,28 @@ export function getBasicScene() {
     pluginId: 'loki'
   });
   const streamHandler = new QueryVariable({
-    label: 'Log stream',
-    name: 'stream',
+    label: 'Source stream',
+    name: 'stream_name',
     datasource: {
       type: 'loki',
       uid: '$ds'
     },
     query: 'label_names()',
   });
+  const streamValueHandler = new QueryVariable({
+    label: 'Stream value',
+    name: 'stream_value',
+    datasource: {
+      type: 'loki',
+      uid: '$ds'
+    },
+    query: 'label_values(source)',
+  });
 
   return new EmbeddedScene({
     $timeRange: timeRange,
     $variables: new SceneVariableSet({
-      variables: [dsHandler, streamHandler],
+      variables: [dsHandler, streamHandler, streamValueHandler],
     }),
     body: new SceneGridLayout({
       children: [
@@ -76,7 +85,7 @@ function getTotalRequestsScene() {
       {
         refId: 'A',
         datasource: getDs(),
-        expr: 'sum(count_over_time({source="/var/log/access.log"}[$__interval]))',
+        expr: 'sum(count_over_time({$stream_name="$stream_value"}[$__interval]))',
       },
     ],
   });
@@ -102,7 +111,7 @@ function getRealtimeVisitorsScene() {
       {
         refId: 'A',
         datasource: getDs(),
-        expr: 'count(sum by (remote_addr) (count_over_time({source="/var/log/access.log"} [$__interval])))',
+        expr: 'count(sum by (remote_addr) (count_over_time({$stream_name="$stream_value"} [$__interval])))',
       },
     ],
     $timeRange: new SceneTimeRange({ from: 'now-5m', to: 'now' }),
@@ -129,7 +138,7 @@ function getErrorRequestsScene() {
       {
         refId: 'A',
         datasource: getDs(),
-        expr: 'sum by (status) (count_over_time({source="/var/log/access.log", status!="200"} [$__interval]))',
+        expr: 'sum by (status) (count_over_time({$stream_name="$stream_value", status!="200"} [$__interval]))',
       },
     ],
   });
@@ -155,7 +164,7 @@ function getBytesSentScene() {
       {
         refId: 'A',
         datasource: getDs(),
-        expr: 'sum by(source) (sum_over_time({source="/var/log/access.log"} | unwrap bytes_sent [$__interval]))',
+        expr: 'sum by(source) (sum_over_time({$stream_name="$stream_value"} | unwrap bytes_sent [$__interval]))',
       },
     ],
   });
@@ -181,7 +190,7 @@ function getLogsScene() {
       {
         refId: 'A',
         datasource: getDs(),
-        expr: '{source="/var/log/access.log"}',
+        expr: '{$stream_name="$stream_value"}',
         limit: 5000,
       },
     ],
