@@ -1,5 +1,5 @@
-import { config } from '@grafana/runtime';
 import {
+  CustomVariable,
   DataSourceVariable,
   EmbeddedScene,
   PanelBuilders,
@@ -12,14 +12,13 @@ import {
   SceneTimePicker,
   SceneTimeRange,
   SceneVariableSet,
+  TextBoxVariable,
   VariableValueSelectors,
 } from '@grafana/scenes';
+import { BigValueColorMode, BigValueGraphMode, BigValueJustifyMode, BigValueTextMode } from '@grafana/schema';
 
 function getDs() {
-  console.log(config.datasources);
-  const entry = Object.entries(config.datasources).find(([_, ds]) => ds.type === 'loki');
-  const ds = entry ? entry[1] : null;
-  return ds ? { type: ds.type, uid: ds.uid } : undefined;
+  return { type: 'loki', uid: '$ds' };
 }
 
 export function getBasicScene() {
@@ -51,11 +50,20 @@ export function getBasicScene() {
     },
     query: 'label_values(source)',
   });
+  const logFormatHandler = new CustomVariable({
+    label: 'Log format',
+    name: 'log_format',
+    query: 'JSON : json,Logfmt : logfmt,Regex : regex'
+  });
+  const regexHandler = new TextBoxVariable({
+    label: 'Regex',
+    name: 'regex',
+  });
 
   return new EmbeddedScene({
     $timeRange: timeRange,
     $variables: new SceneVariableSet({
-      variables: [dsHandler, streamHandler, streamValueHandler],
+      variables: [dsHandler, streamHandler, streamValueHandler, logFormatHandler, regexHandler],
     }),
     body: new SceneGridLayout({
       children: [
@@ -85,22 +93,25 @@ function getTotalRequestsScene() {
       {
         refId: 'A',
         datasource: getDs(),
-        expr: 'sum(count_over_time({$stream_name="$stream_value"}[$__interval]))',
+        expr: 'sum by (host) (count_over_time({$stream_name="$stream_value"}[$__interval]))',
       },
     ],
   });
 
-  const panel = PanelBuilders.timeseries()
+  const panel = PanelBuilders.stat()
     .setTitle('Total requests')
     .setData(queryRunner)
-    .build();
+    .setOption('textMode', BigValueTextMode.Value)
+    .setOption('colorMode', BigValueColorMode.Background)
+    .setOption('graphMode', BigValueGraphMode.Area)
+    .setOption('justifyMode', BigValueJustifyMode.Center);
   
   return new SceneGridItem({
     x: 0,
     y: 0,
     height: 8,
     width: 12,
-    body: panel,
+    body: panel.build(),
   });
 }
 
@@ -119,15 +130,14 @@ function getRealtimeVisitorsScene() {
 
   const panel = PanelBuilders.stat()
     .setTitle('Real time visitors')
-    .setData(queryRunner)
-    .build();
+    .setData(queryRunner);
   
   return new SceneGridItem({
     height: 8,
     width: 8,
     x: 0,
     y: 8,
-    body: panel,
+    body: panel.build(),
   });
 }
 
@@ -138,7 +148,7 @@ function getErrorRequestsScene() {
       {
         refId: 'A',
         datasource: getDs(),
-        expr: 'sum by (status) (count_over_time({$stream_name="$stream_value", status!="200"} [$__interval]))',
+        expr: 'sum by (status) (count_over_time({$stream_name="$stream_value", status="500"} [$__interval]))',
       },
     ],
   });
