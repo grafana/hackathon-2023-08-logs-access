@@ -67,9 +67,13 @@ export function getBasicScene() {
     }),
     body: new SceneGridLayout({
       children: [
+        // Top panels
         getTotalRequestsScene(),
-        getRealtimeVisitorsScene(),
+        getSuccessfulRequestsScene(),
         getErrorRequestsScene(),
+        getRedirectionsScene(),
+        // Bottom panels
+        getRealtimeVisitorsScene(),
         getBytesSentScene(),
         getLogsScene()
       ],
@@ -93,7 +97,7 @@ function getTotalRequestsScene() {
       {
         refId: 'A',
         datasource: getDs(),
-        expr: 'sum by (host) (count_over_time({$stream_name="$stream_value"}[$__interval]))',
+        expr: 'sum(count_over_time({$stream_name="$stream_value"} [$__interval]))',
       },
     ],
   });
@@ -109,8 +113,95 @@ function getTotalRequestsScene() {
   return new SceneGridItem({
     x: 0,
     y: 0,
-    height: 8,
-    width: 12,
+    height: 4,
+    width: 4,
+    body: panel.build(),
+  });
+}
+
+function getSuccessfulRequestsScene() {
+  const queryRunner = new SceneQueryRunner({
+    datasource: getDs(),
+    queries: [
+      {
+        refId: 'A',
+        datasource: getDs(),
+        expr: 'sum(count_over_time({$stream_name="$stream_value"} | status > 199 | status < 300 [$__interval]))',
+      },
+    ],
+  });
+
+  const panel = PanelBuilders.stat()
+    .setTitle('Successful requests (2xx)')
+    .setData(queryRunner)
+    .setOption('textMode', BigValueTextMode.Value)
+    .setOption('colorMode', BigValueColorMode.Background)
+    .setOption('graphMode', BigValueGraphMode.Area)
+    .setOption('justifyMode', BigValueJustifyMode.Center);
+  
+  return new SceneGridItem({
+    x: 4,
+    y: 0,
+    height: 4,
+    width: 4,
+    body: panel.build(),
+  });
+}
+
+function getErrorRequestsScene() {
+  const queryRunner = new SceneQueryRunner({
+    datasource: getDs(),
+    queries: [
+      {
+        refId: 'A',
+        datasource: getDs(),
+        expr: 'sum(count_over_time({$stream_name="$stream_value"} | status > 399 [$__interval]))',
+      },
+    ],
+  });
+
+  const panel = PanelBuilders.stat()
+    .setTitle('Failed requests (4xx/5xx)')
+    .setData(queryRunner)
+    .setOption('textMode', BigValueTextMode.Value)
+    .setOption('colorMode', BigValueColorMode.Background)
+    .setOption('graphMode', BigValueGraphMode.Area)
+    .setOption('justifyMode', BigValueJustifyMode.Center);
+  
+  return new SceneGridItem({
+    x: 8,
+    y: 0,
+    height: 4,
+    width: 4,
+    body: panel.build(),
+  });
+}
+
+function getRedirectionsScene() {
+  const queryRunner = new SceneQueryRunner({
+    datasource: getDs(),
+    queries: [
+      {
+        refId: 'A',
+        datasource: getDs(),
+        expr: 'sum(count_over_time({$stream_name="$stream_value"} | status > 299 | status < 400 [$__interval]))',
+      },
+    ],
+  });
+
+  const panel = PanelBuilders.stat()
+    .setTitle('Redirects (3xx)')
+    .setData(queryRunner)
+    .setOption('textMode', BigValueTextMode.Value)
+    .setOption('colorMode', BigValueColorMode.Background)
+    .setOption('graphMode', BigValueGraphMode.Area)
+    .setOption('justifyMode', BigValueJustifyMode.Center);
+  
+  return new SceneGridItem({
+    x: 12,
+    y: 0,
+    height: 4,
+    width: 4,
     body: panel.build(),
   });
 }
@@ -141,7 +232,7 @@ function getRealtimeVisitorsScene() {
   });
 }
 
-function getErrorRequestsScene() {
+function getErrorRequestsOverTimeScene() {
   const queryRunner = new SceneQueryRunner({
     datasource: getDs(),
     queries: [
