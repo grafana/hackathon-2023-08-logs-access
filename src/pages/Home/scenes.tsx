@@ -52,7 +52,7 @@ export function getBasicScene() {
   });
   const logFormatHandler = new CustomVariable({
     label: 'Log format',
-    name: 'log_format',
+    name: 'parser',
     query: 'JSON : json,Logfmt : logfmt,Regex : regex'
   });
   const regexHandler = new TextBoxVariable({
@@ -72,6 +72,8 @@ export function getBasicScene() {
         getSuccessfulRequestsScene(),
         getErrorRequestsScene(),
         getRedirectionsScene(),
+        getStaticFileRequests(),
+        getStaticFileTransferRequests(),
         // Bottom panels
         getRealtimeVisitorsScene(),
         getBytesSentScene(),
@@ -199,6 +201,65 @@ function getRedirectionsScene() {
   
   return new SceneGridItem({
     x: 12,
+    y: 0,
+    height: 4,
+    width: 4,
+    body: panel.build(),
+  });
+}
+
+function getStaticFileRequests() {
+  const queryRunner = new SceneQueryRunner({
+    datasource: getDs(),
+    queries: [
+      {
+        refId: 'A',
+        datasource: getDs(),
+        expr: 'sum(count_over_time({$stream_name="$stream_value"} | $parser $regex | request_uri=~".*\.(jpg|png|css|js|gif|webm|mp4|webp)" [$__interval]))',
+      },
+    ],
+  });
+
+  const panel = PanelBuilders.stat()
+    .setTitle('Static file requests')
+    .setData(queryRunner)
+    .setOption('textMode', BigValueTextMode.Value)
+    .setOption('colorMode', BigValueColorMode.Background)
+    .setOption('graphMode', BigValueGraphMode.Area)
+    .setOption('justifyMode', BigValueJustifyMode.Center);
+  
+  return new SceneGridItem({
+    x: 16,
+    y: 0,
+    height: 4,
+    width: 4,
+    body: panel.build(),
+  });
+}
+
+function getStaticFileTransferRequests() {
+  const queryRunner = new SceneQueryRunner({
+    datasource: getDs(),
+    queries: [
+      {
+        refId: 'A',
+        datasource: getDs(),
+        expr: 'sum(sum_over_time({$stream_name="$stream_value"} | $parser $regex | request_uri=~".*\.(jpg|png|css|js|gif|webm|mp4|webp)" | unwrap bytes(bytes_sent) [1m]))',
+      },
+    ],
+  });
+
+  const panel = PanelBuilders.stat()
+    .setTitle('Static file transferred (MB)')
+    .setData(queryRunner)
+    .setOption('textMode', BigValueTextMode.Value)
+    .setOption('colorMode', BigValueColorMode.Background)
+    .setOption('graphMode', BigValueGraphMode.Area)
+    .setOption('justifyMode', BigValueJustifyMode.Center)
+    .setUnit('bytes');
+  
+  return new SceneGridItem({
+    x: 20,
     y: 0,
     height: 4,
     width: 4,
