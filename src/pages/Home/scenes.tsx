@@ -76,7 +76,9 @@ export function getBasicScene() {
         getStaticFileTransferRequests(),
         // Bottom panels
         getRealtimeVisitorsScene(),
-        getBytesSentScene(),
+        getRequestsRateScene(),
+        // Graphs
+        getRequestsOverTimeScene(),
         getLogsScene()
       ],
     }),
@@ -110,7 +112,12 @@ function getTotalRequestsScene() {
     .setOption('textMode', BigValueTextMode.Value)
     .setOption('colorMode', BigValueColorMode.Background)
     .setOption('graphMode', BigValueGraphMode.Area)
-    .setOption('justifyMode', BigValueJustifyMode.Center);
+    .setOption('justifyMode', BigValueJustifyMode.Center)
+    .setOption('reduceOptions', {
+      values: false,
+      calcs: ['sum'],
+      fields: '',
+    });
   
   return new SceneGridItem({
     x: 0,
@@ -139,7 +146,12 @@ function getSuccessfulRequestsScene() {
     .setOption('textMode', BigValueTextMode.Value)
     .setOption('colorMode', BigValueColorMode.Background)
     .setOption('graphMode', BigValueGraphMode.Area)
-    .setOption('justifyMode', BigValueJustifyMode.Center);
+    .setOption('justifyMode', BigValueJustifyMode.Center)
+    .setOption('reduceOptions', {
+      values: false,
+      calcs: ['sum'],
+      fields: '',
+    });
   
   return new SceneGridItem({
     x: 4,
@@ -168,7 +180,12 @@ function getErrorRequestsScene() {
     .setOption('textMode', BigValueTextMode.Value)
     .setOption('colorMode', BigValueColorMode.Background)
     .setOption('graphMode', BigValueGraphMode.Area)
-    .setOption('justifyMode', BigValueJustifyMode.Center);
+    .setOption('justifyMode', BigValueJustifyMode.Center)
+    .setOption('reduceOptions', {
+      values: false,
+      calcs: ['sum'],
+      fields: '',
+    })
   
   return new SceneGridItem({
     x: 8,
@@ -197,7 +214,12 @@ function getRedirectionsScene() {
     .setOption('textMode', BigValueTextMode.Value)
     .setOption('colorMode', BigValueColorMode.Background)
     .setOption('graphMode', BigValueGraphMode.Area)
-    .setOption('justifyMode', BigValueJustifyMode.Center);
+    .setOption('justifyMode', BigValueJustifyMode.Center)
+    .setOption('reduceOptions', {
+      values: false,
+      calcs: ['sum'],
+      fields: '',
+    });
   
   return new SceneGridItem({
     x: 12,
@@ -226,7 +248,12 @@ function getStaticFileRequests() {
     .setOption('textMode', BigValueTextMode.Value)
     .setOption('colorMode', BigValueColorMode.Background)
     .setOption('graphMode', BigValueGraphMode.Area)
-    .setOption('justifyMode', BigValueJustifyMode.Center);
+    .setOption('justifyMode', BigValueJustifyMode.Center)
+    .setOption('reduceOptions', {
+      values: false,
+      calcs: ['sum'],
+      fields: '',
+    });
   
   return new SceneGridItem({
     x: 16,
@@ -256,7 +283,12 @@ function getStaticFileTransferRequests() {
     .setOption('colorMode', BigValueColorMode.Background)
     .setOption('graphMode', BigValueGraphMode.Area)
     .setOption('justifyMode', BigValueJustifyMode.Center)
-    .setUnit('bytes');
+    .setUnit('bytes')
+    .setOption('reduceOptions', {
+      values: true,
+      calcs: ['sum'],
+      fields: '',
+    });
   
   return new SceneGridItem({
     x: 20,
@@ -274,7 +306,7 @@ function getRealtimeVisitorsScene() {
       {
         refId: 'A',
         datasource: getDs(),
-        expr: 'count(sum by (remote_addr) (count_over_time({$stream_name="$stream_value"} [$__interval])))',
+        expr: 'count(sum by (remote_addr) (count_over_time({$stream_name="$stream_value"} | $parser |  __error__="" [$__interval])))',
       },
     ],
     $timeRange: new SceneTimeRange({ from: 'now-5m', to: 'now' }),
@@ -282,25 +314,55 @@ function getRealtimeVisitorsScene() {
 
   const panel = PanelBuilders.stat()
     .setTitle('Real time visitors')
-    .setData(queryRunner);
+    .setData(queryRunner)
+    .setOption('reduceOptions', {
+      values: false,
+      calcs: ['mean'],
+      fields: '',
+    });
   
   return new SceneGridItem({
-    height: 8,
-    width: 8,
+    height: 4,
+    width: 4,
     x: 0,
     y: 8,
     body: panel.build(),
   });
 }
 
-function getErrorRequestsOverTimeScene() {
+function getRequestsRateScene() {
   const queryRunner = new SceneQueryRunner({
     datasource: getDs(),
     queries: [
       {
         refId: 'A',
         datasource: getDs(),
-        expr: 'sum by (status) (count_over_time({$stream_name="$stream_value", status="500"} [$__interval]))',
+        expr: 'sum(rate({$stream_name="$stream_value"} [$__interval]))',
+      },
+    ],
+  });
+
+  const panel = PanelBuilders.stat()
+    .setTitle('Request rate')
+    .setData(queryRunner);
+  
+  return new SceneGridItem({
+    height: 4,
+    width: 4,
+    x: 4,
+    y: 8,
+    body: panel.build(),
+  });
+}
+
+function getRequestsOverTimeScene() {
+  const queryRunner = new SceneQueryRunner({
+    datasource: getDs(),
+    queries: [
+      {
+        refId: 'A',
+        datasource: getDs(),
+        expr: 'sum by (status) (count_over_time({$stream_name="$stream_value"} [$__interval]))',
       },
     ],
   });
@@ -312,35 +374,9 @@ function getErrorRequestsOverTimeScene() {
   
   return new SceneGridItem({
     height: 8,
-    width: 12,
-    x: 12,
-    y: 0,
-    body: panel,
-  });
-}
-
-function getBytesSentScene() {
-  const queryRunner = new SceneQueryRunner({
-    datasource: getDs(),
-    queries: [
-      {
-        refId: 'A',
-        datasource: getDs(),
-        expr: 'sum by(source) (sum_over_time({$stream_name="$stream_value"} | unwrap bytes_sent [$__interval]))',
-      },
-    ],
-  });
-
-  const panel = PanelBuilders.timeseries()
-    .setTitle('Bytes sent')
-    .setData(queryRunner)
-    .build();
-  
-  return new SceneGridItem({
-    height: 8,
     width: 16,
     x: 8,
-    y: 8,
+    y: 4,
     body: panel,
   });
 }
