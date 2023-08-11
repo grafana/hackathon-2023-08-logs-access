@@ -423,7 +423,7 @@ function getFailedRequestsRateScene() {
   });
 
   const panel = PanelBuilders.stat()
-    .setTitle('Error rate / second')
+    .setTitle('Failure rate / second')
     .setColor({
       mode: FieldColorModeId.Fixed
     })
