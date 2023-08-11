@@ -486,6 +486,18 @@ function getDataTransferOverTimeScene() {
     .setTitle('Data transfer over time')
     .setData(queryRunner)
     .setUnit('bytes')
+    .setOverrides((builder) => {
+      builder
+        .matchFieldsWithName('Value')
+        .overrideColor({
+          mode: FieldColorModeId.Fixed,
+          fixedColor: '#5794F2',
+        });
+    })
+    .setOption('legend', {
+      showLegend: false,
+    })
+    .setCustomFieldConfig('fillOpacity', 100)
     .build();
   
   return new SceneGridItem({
