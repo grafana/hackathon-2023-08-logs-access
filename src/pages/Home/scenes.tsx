@@ -575,7 +575,7 @@ function getLogsScene() {
       {
         refId: 'A',
         datasource: getDs(),
-        expr: '{$stream_name="$stream_value"} | $parser | line_format "{{.request_method}} {{.request_uri}} ({{.status}})"',
+        expr: '{$stream_name="$stream_value"} | $parser | line_format "{{.request_method}} {{.request_uri}} ({{if eq .status \\"500\\"}}\x1b[31m{{.status}}\u001b[0m{{else}}{{.status}}{{end}})"',
         limit: 5000,
       },
     ],
