@@ -54,17 +54,17 @@ export function getBasicScene() {
   const logFormatHandler = new CustomVariable({
     label: 'Log format',
     name: 'parser',
-    query: 'JSON : json,Logfmt : logfmt,Regex : regex'
+    query: 'JSON : json,Logfmt : logfmt,Pattern : pattern'
   });
-  const regexHandler = new TextBoxVariable({
-    label: 'Regex',
-    name: 'regex',
+  const patternHandler = new TextBoxVariable({
+    label: 'Pattern',
+    name: 'pattern',
   });
 
   return new EmbeddedScene({
     $timeRange: timeRange,
     $variables: new SceneVariableSet({
-      variables: [dsHandler, streamHandler, streamValueHandler, logFormatHandler, regexHandler],
+      variables: [dsHandler, streamHandler, streamValueHandler, logFormatHandler, patternHandler],
     }),
     body: new SceneGridLayout({
       children: [
@@ -254,7 +254,7 @@ function getStaticFileRequests() {
       {
         refId: 'A',
         datasource: getDs(),
-        expr: 'sum(count_over_time({$stream_name="$stream_value"} | $parser $regex | request_uri=~".*\.(jpg|png|css|js|gif|webm|mp4|webp)" [$__interval]))',
+        expr: 'sum(count_over_time({$stream_name="$stream_value"} | $parser $pattern | request_uri=~".*\.(jpg|png|css|js|gif|webm|mp4|webp)" [$__interval]))',
       },
     ],
   });
@@ -291,7 +291,7 @@ function getStaticFileTransferScene() {
       {
         refId: 'A',
         datasource: getDs(),
-        expr: 'sum(sum_over_time({$stream_name="$stream_value"} | $parser $regex | request_uri=~".*\.(jpg|png|css|js|gif|webm|mp4|webp)" | unwrap bytes(bytes_sent) [$__interval]))',
+        expr: 'sum(sum_over_time({$stream_name="$stream_value"} | $parser $pattern | request_uri=~".*\.(jpg|png|css|js|gif|webm|mp4|webp)" | unwrap bytes(bytes_sent) [$__interval]))',
       },
     ],
   });
@@ -329,7 +329,7 @@ function getRealtimeVisitorsScene() {
       {
         refId: 'A',
         datasource: getDs(),
-        expr: 'count(sum by (remote_addr) (count_over_time({$stream_name="$stream_value"} | $parser |  __error__="" [$__interval])))',
+        expr: 'count(sum by (remote_addr) (count_over_time({$stream_name="$stream_value"} | $parser $pattern |  __error__="" [$__interval])))',
       },
     ],
     $timeRange: new SceneTimeRange({ from: 'now-5m', to: 'now' }),
@@ -479,7 +479,7 @@ function getDataTransferOverTimeScene() {
       {
         refId: 'A',
         datasource: getDs(),
-        expr: 'sum(sum_over_time({$stream_name="$stream_value"} | $parser $regex | unwrap bytes(bytes_sent) [$__interval]))',
+        expr: 'sum(sum_over_time({$stream_name="$stream_value"} | $parser $pattern | unwrap bytes(bytes_sent) [$__interval]))',
       },
     ],
   });
@@ -518,7 +518,7 @@ function getTopURLsScene() {
       {
         refId: 'A',
         datasource: getDs(),
-        expr: 'topk(10, sum by (request_uri) (count_over_time({$stream_name=~"$stream_value"} !~ `\.ico|\.svg|\.css|\.png|\.jpg|\.txt|\.js|\.xml` | $parser | status = 200 and request_uri != "/" | __error__="" [$__interval])))',
+        expr: 'topk(10, sum by (request_uri) (count_over_time({$stream_name=~"$stream_value"} !~ `\.ico|\.svg|\.css|\.png|\.jpg|\.txt|\.js|\.xml` | $parser $pattern | status = 200 and request_uri != "/" | __error__="" [$__interval])))',
         instant: true,
         legendFormat: "{{request_uri}}",
         range: false,
@@ -575,7 +575,7 @@ function getLogsScene() {
       {
         refId: 'A',
         datasource: getDs(),
-        expr: '{$stream_name="$stream_value"} | $parser | line_format "{{.request_method}} {{.request_uri}} ({{if eq .status \\"500\\"}}\x1b[31m{{.status}}\u001b[0m{{else}}{{.status}}{{end}})"',
+        expr: '{$stream_name="$stream_value"} | $parser $pattern | line_format "{{.request_method}} {{.request_uri}} ({{if eq .status \\"500\\"}}\x1b[31m{{.status}}\u001b[0m{{else}}{{.status}}{{end}})"',
         limit: 5000,
       },
     ],
