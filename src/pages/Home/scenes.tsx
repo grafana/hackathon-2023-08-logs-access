@@ -343,7 +343,7 @@ function getRequestsRateScene() {
   });
 
   const panel = PanelBuilders.stat()
-    .setTitle('Request rate')
+    .setTitle('Requests rate / second')
     .setData(queryRunner);
   
   return new SceneGridItem({
