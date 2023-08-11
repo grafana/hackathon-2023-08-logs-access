@@ -277,7 +277,7 @@ function getStaticFileTransferRequests() {
   });
 
   const panel = PanelBuilders.stat()
-    .setTitle('Static file transferred (MB)')
+    .setTitle('Static files transferred')
     .setData(queryRunner)
     .setOption('textMode', BigValueTextMode.Value)
     .setOption('colorMode', BigValueColorMode.Background)
@@ -368,7 +368,7 @@ function getRequestsOverTimeScene() {
   });
 
   const panel = PanelBuilders.timeseries()
-    .setTitle('Requests with errors')
+    .setTitle('Requests over time')
     .setData(queryRunner)
     .build();
   
