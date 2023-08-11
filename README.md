@@ -1,22 +1,16 @@
-# Grafana Scenes App Plugin Template
+# Grafana Access Logs Plugin
 
-This template is a starting point for building an app plugin with [scenes](https://grafana.github.io/scenes) for Grafana.
+Plugin to query and visualize your Loki stored access logs, with features such as:
 
-## What are Grafana app plugins?
+- Requests information: total, successful, failed, redirects, static files.
+- Real time visitors.
+- Requests (total, successful, failed) rate.
+- Data transfer (data transfer over time and total static files transfers).
+- Requests over time by status.
+- Top 10 URLs.
+- Logs for the current time selection (limit 5000).
 
-App plugins can let you create a custom out-of-the-box monitoring experience by custom pages, nested datasources and panel plugins.
-
-## What is @grafana/scenes?
-
-[@grafana/scenes](https://github.com/grafana/scenes) is a framework to enable versatile app plugins implementation. It provides an easy way to build apps that resemble Grafana's dashboarding experience, including template variables support, versatile layouts, panels rendering and more.
-
-To learn more about @grafana/scenes usage please refer to the [documentation](https://grafana.github.io/scenes)
-
-## What does this template contain?
-
-1. An example of a simple scene. See [Home scene](./src/pages/Home/Home.tsx)
-1. An example of a scene with tabs. See [Scene with tabs](./src/pages/WithTabs/WithTabs.tsx)
-1. An example of a scene with drill down. See [Scene with drill down](./src/pages/WithDrilldown/WithDrilldown.tsx)
+It supports logs stored with formats JSON, logfmt and with the default (or your chosen) access log format. If the logs are not stored in JSON or logfmt, you can parse them using the supported `pattern` parser, with a pattern such as `<remote_addr> - - <_> \"<request_method> <request_uri> <server_protocol>\" <status> <bytes_sent> <_> \"<http_user_agent>\"` for the default log output format. The use of a parser is required to access the different log fields and perform searches or metric queries.
 
 ### Frontend
 
