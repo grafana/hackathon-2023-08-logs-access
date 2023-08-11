@@ -5,6 +5,7 @@ import {
   PanelBuilders,
   QueryVariable,
   SceneControlsSpacer,
+  SceneDataTransformer,
   SceneGridItem,
   SceneGridLayout,
   SceneQueryRunner,
@@ -82,6 +83,7 @@ export function getBasicScene() {
         // Graphs
         getRequestsOverTimeScene(),
         getDataTransferOverTimeScene(),
+        getTopURLsScene(),
         getLogsScene()
       ],
     }),
@@ -346,7 +348,7 @@ function getRealtimeVisitorsScene() {
     height: 4,
     width: 4,
     x: 0,
-    y: 8,
+    y: 4,
     body: panel.build(),
   });
 }
@@ -376,7 +378,7 @@ function getRequestsRateScene() {
     height: 4,
     width: 4,
     x: 4,
-    y: 8,
+    y: 4,
     body: panel.build(),
   });
 }
@@ -406,7 +408,7 @@ function getSuccessfulRequestsRateScene() {
     height: 4,
     width: 4,
     x: 0,
-    y: 12,
+    y: 8,
     body: panel.build(),
   });
 }
@@ -439,7 +441,7 @@ function getFailedRequestsRateScene() {
     height: 4,
     width: 4,
     x: 4,
-    y: 12,
+    y: 8,
     body: panel.build(),
   });
 }
@@ -504,6 +506,63 @@ function getDataTransferOverTimeScene() {
     height: 8,
     width: 16,
     x: 8,
+    y: 12,
+    body: panel,
+  });
+}
+
+function getTopURLsScene() {
+  const queryRunner = new SceneQueryRunner({
+    datasource: getDs(),
+    queries: [
+      {
+        refId: 'A',
+        datasource: getDs(),
+        expr: 'topk(10, sum by (request_uri) (count_over_time({$stream_name=~"$stream_value"} !~ `\.ico|\.svg|\.css|\.png|\.jpg|\.txt|\.js|\.xml` | $parser | status = 200 and request_uri != "/" | __error__="" [$__interval])))',
+        instant: true,
+        legendFormat: "{{request_uri}}",
+        range: false,
+      },
+    ],
+  });
+
+  const transformedData = new SceneDataTransformer({
+    $data: queryRunner,
+    "transformations": [
+      {
+        "id": "organize",
+        "options": {
+          "excludeByName": {
+            "Time": true
+          },
+          "indexByName": {},
+          "renameByName": {
+            "Field": "Page",
+            "Time": "",
+            "Total": "",
+            "Value #A": "Requests",
+            "request_uri": "Path"
+          }
+        }
+      }
+    ],
+  });
+
+  const panel = PanelBuilders.table()
+    .setTitle('Top 10 URLs')
+    .setData(transformedData)
+    .setOption('sortBy', [
+      {
+        "desc": true,
+        "displayName": "Requests"
+      }
+    ])
+    .build();
+  
+  return new SceneGridItem({
+    height: 8,
+    width: 8,
+    x: 0,
     y: 12,
     body: panel,
   });
