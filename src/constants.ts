@@ -4,8 +4,7 @@ export const PLUGIN_BASE_URL = `/a/${pluginJson.id}`;
 
 export enum ROUTES {
   Home = 'home',
-  WithTabs = 'page-with-tabs',
-  WithDrilldown = 'page-with-drilldown',
+  Instructions = 'instructions',
 }
 
 export const DATASOURCE_REF = {
