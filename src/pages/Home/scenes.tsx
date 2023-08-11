@@ -15,7 +15,7 @@ import {
   TextBoxVariable,
   VariableValueSelectors,
 } from '@grafana/scenes';
-import { BigValueColorMode, BigValueGraphMode, BigValueJustifyMode, BigValueTextMode } from '@grafana/schema';
+import { BigValueColorMode, BigValueGraphMode, BigValueJustifyMode, BigValueTextMode, FieldColorModeId } from '@grafana/schema';
 
 function getDs() {
   return { type: 'loki', uid: '$ds' };
@@ -77,6 +77,8 @@ export function getBasicScene() {
         // Bottom panels
         getRealtimeVisitorsScene(),
         getRequestsRateScene(),
+        getSuccessfulRequestsRateScene(),
+        getFailedRequestsRateScene(),
         // Graphs
         getRequestsOverTimeScene(),
         getLogsScene()
@@ -113,6 +115,9 @@ function getTotalRequestsScene() {
     .setOption('colorMode', BigValueColorMode.Background)
     .setOption('graphMode', BigValueGraphMode.Area)
     .setOption('justifyMode', BigValueJustifyMode.Center)
+    .setColor({
+      mode: FieldColorModeId.ContinuousGreens
+    })
     .setOption('reduceOptions', {
       values: false,
       calcs: ['sum'],
@@ -147,6 +152,9 @@ function getSuccessfulRequestsScene() {
     .setOption('colorMode', BigValueColorMode.Background)
     .setOption('graphMode', BigValueGraphMode.Area)
     .setOption('justifyMode', BigValueJustifyMode.Center)
+    .setColor({
+      mode: FieldColorModeId.ContinuousGreens
+    })
     .setOption('reduceOptions', {
       values: false,
       calcs: ['sum'],
@@ -181,6 +189,9 @@ function getErrorRequestsScene() {
     .setOption('colorMode', BigValueColorMode.Background)
     .setOption('graphMode', BigValueGraphMode.Area)
     .setOption('justifyMode', BigValueJustifyMode.Center)
+    .setColor({
+      mode: FieldColorModeId.ContinuousBlYlRd
+    })
     .setOption('reduceOptions', {
       values: false,
       calcs: ['sum'],
@@ -215,6 +226,9 @@ function getRedirectionsScene() {
     .setOption('colorMode', BigValueColorMode.Background)
     .setOption('graphMode', BigValueGraphMode.Area)
     .setOption('justifyMode', BigValueJustifyMode.Center)
+    .setColor({
+      mode: FieldColorModeId.ContinuousBlPu
+    })
     .setOption('reduceOptions', {
       values: false,
       calcs: ['sum'],
@@ -249,6 +263,9 @@ function getStaticFileRequests() {
     .setOption('colorMode', BigValueColorMode.Background)
     .setOption('graphMode', BigValueGraphMode.Area)
     .setOption('justifyMode', BigValueJustifyMode.Center)
+    .setColor({
+      mode: FieldColorModeId.ContinuousBlPu
+    })
     .setOption('reduceOptions', {
       values: false,
       calcs: ['sum'],
@@ -271,7 +288,7 @@ function getStaticFileTransferRequests() {
       {
         refId: 'A',
         datasource: getDs(),
-        expr: 'sum(sum_over_time({$stream_name="$stream_value"} | $parser $regex | request_uri=~".*\.(jpg|png|css|js|gif|webm|mp4|webp)" | unwrap bytes(bytes_sent) [1m]))',
+        expr: 'sum(sum_over_time({$stream_name="$stream_value"} | $parser $regex | request_uri=~".*\.(jpg|png|css|js|gif|webm|mp4|webp)" | unwrap bytes(bytes_sent) [$__interval]))',
       },
     ],
   });
@@ -284,6 +301,9 @@ function getStaticFileTransferRequests() {
     .setOption('graphMode', BigValueGraphMode.Area)
     .setOption('justifyMode', BigValueJustifyMode.Center)
     .setUnit('bytes')
+    .setColor({
+      mode: FieldColorModeId.ContinuousBlPu
+    })
     .setOption('reduceOptions', {
       values: false,
       calcs: ['sum'],
@@ -344,13 +364,81 @@ function getRequestsRateScene() {
 
   const panel = PanelBuilders.stat()
     .setTitle('Requests rate / second')
-    .setData(queryRunner);
+    .setData(queryRunner)
+    .setOption('reduceOptions', {
+      values: false,
+      calcs: ['mean'],
+      fields: '',
+    });
   
   return new SceneGridItem({
     height: 4,
     width: 4,
     x: 4,
     y: 8,
+    body: panel.build(),
+  });
+}
+
+function getSuccessfulRequestsRateScene() {
+  const queryRunner = new SceneQueryRunner({
+    datasource: getDs(),
+    queries: [
+      {
+        refId: 'A',
+        datasource: getDs(),
+        expr: 'sum(rate({$stream_name="$stream_value"} | status > 199 | status < 399 [$__interval]))',
+      },
+    ],
+  });
+
+  const panel = PanelBuilders.stat()
+    .setTitle('Success rate / second')
+    .setData(queryRunner)
+    .setOption('reduceOptions', {
+      values: false,
+      calcs: ['mean'],
+      fields: '',
+    });
+  
+  return new SceneGridItem({
+    height: 4,
+    width: 4,
+    x: 0,
+    y: 12,
+    body: panel.build(),
+  });
+}
+
+function getFailedRequestsRateScene() {
+  const queryRunner = new SceneQueryRunner({
+    datasource: getDs(),
+    queries: [
+      {
+        refId: 'A',
+        datasource: getDs(),
+        expr: 'sum(rate({$stream_name="$stream_value"} | status > 399 [$__interval]))',
+      },
+    ],
+  });
+
+  const panel = PanelBuilders.stat()
+    .setTitle('Error rate / second')
+    .setColor({
+      mode: FieldColorModeId.Fixed
+    })
+    .setData(queryRunner)
+    .setOption('reduceOptions', {
+      values: false,
+      calcs: ['mean'],
+      fields: '',
+    });
+  
+  return new SceneGridItem({
+    height: 4,
+    width: 4,
+    x: 4,
+    y: 12,
     body: panel.build(),
   });
 }
