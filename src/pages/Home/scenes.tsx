@@ -285,7 +285,7 @@ function getStaticFileTransferRequests() {
     .setOption('justifyMode', BigValueJustifyMode.Center)
     .setUnit('bytes')
     .setOption('reduceOptions', {
-      values: true,
+      values: false,
       calcs: ['sum'],
       fields: '',
     });
