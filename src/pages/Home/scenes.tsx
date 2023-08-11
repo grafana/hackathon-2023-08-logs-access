@@ -73,7 +73,7 @@ export function getBasicScene() {
         getErrorRequestsScene(),
         getRedirectionsScene(),
         getStaticFileRequests(),
-        getStaticFileTransferRequests(),
+        getStaticFileTransferScene(),
         // Bottom panels
         getRealtimeVisitorsScene(),
         getRequestsRateScene(),
@@ -81,6 +81,7 @@ export function getBasicScene() {
         getFailedRequestsRateScene(),
         // Graphs
         getRequestsOverTimeScene(),
+        getDataTransferOverTimeScene(),
         getLogsScene()
       ],
     }),
@@ -281,7 +282,7 @@ function getStaticFileRequests() {
   });
 }
 
-function getStaticFileTransferRequests() {
+function getStaticFileTransferScene() {
   const queryRunner = new SceneQueryRunner({
     datasource: getDs(),
     queries: [
@@ -465,6 +466,33 @@ function getRequestsOverTimeScene() {
     width: 16,
     x: 8,
     y: 4,
+    body: panel,
+  });
+}
+
+function getDataTransferOverTimeScene() {
+  const queryRunner = new SceneQueryRunner({
+    datasource: getDs(),
+    queries: [
+      {
+        refId: 'A',
+        datasource: getDs(),
+        expr: 'sum(sum_over_time({$stream_name="$stream_value"} | $parser $regex | unwrap bytes(bytes_sent) [$__interval]))',
+      },
+    ],
+  });
+
+  const panel = PanelBuilders.timeseries()
+    .setTitle('Data transfer over time')
+    .setData(queryRunner)
+    .setUnit('bytes')
+    .build();
+  
+  return new SceneGridItem({
+    height: 8,
+    width: 16,
+    x: 8,
+    y: 12,
     body: panel,
   });
 }
